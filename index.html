@@ -1,0 +1,151 @@
+<html>
+  <head>
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/react-router-dom/5.0.1/react-router-dom.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js'></script>
+<style>
+  nav{
+    display : flex;
+    justify-content: space-around;
+  }
+  ul,li{
+    list-style-type: none ;
+    
+  }
+  .selected{
+    color:white;
+    background-color: teal;
+    border-radius: 0.2rem;
+
+  }
+</style>
+  </head>
+  <body>
+    <div id='root'></div>
+  <script type='text/babel'>
+    const { Component } = React;
+    const { render } = ReactDOM;
+    const {HashRouter,Route,Link,Switch,Redirect}= ReactRouterDOM;
+   
+    const root = document.querySelector('#root');
+
+    const API = 'https://acme-users-api-rev.herokuapp.com/api';
+    //const API = 'https://acme-simple-api.herokuapp.com';
+   
+  
+   const ProductsUnderFive = ({prodUnder5,match,companies,offerings})=>{
+     // console.log(prodUnder5)
+     // console.log(match.params.id)
+   
+    return(
+      <div>
+        <ul>
+            {
+              prodUnder5.map(product=>{
+                return(
+                  <li key={product.id}>
+                     <Link to={`/prodUnderFive/${product.id}`}> {product.name} </Link>
+                  </li>
+              )})
+            }
+          </ul>
+        
+          <Route render={()=> <CompanyOfferings productId={match.params.id} 
+            companies={companies} 
+            offerings={offerings}   />} />
+          </div>
+        )
+      }
+      
+    const ProductsOverFive = ({prod5AndMore,match,companies,offerings})=>{
+      console.log(prod5AndMore)
+      
+      //console.log(match.params.id)
+      return(
+            <div>
+            <ul>
+              {
+                prod5AndMore.map(product=>{
+                  return(
+                    <li key={product.id}>
+                      <Link to={`/prodFiveAndOver/${product.id}`}> {product.name} </Link> 
+                    </li>
+                )})
+              }
+            </ul>
+            
+            <Route render={()=> <CompanyOfferings productId={match.params.id} 
+            companies={companies} 
+            offerings={offerings}   />} />
+            </div>
+          )
+        }
+      const CompanyOfferings=({productId,offerings,companies})=>{
+        
+       console.log(productId)
+        console.log(offerings,companies)
+        return (
+            <div>
+              Test
+            </div> 
+        )
+
+      }
+     
+    class App extends Component{
+      constructor(){
+        super();
+         this.state = {
+            products: [],
+            companies: [],
+            offerings: []
+        }; 
+      }
+     
+      async componentDidMount(){
+          const products = (await axios.get(`${API}/products`)).data;
+          const companies= (await axios.get(`${API}/companies`)).data;
+          const offerings= (await axios.get(`${API}/offerings`)).data;
+          this.setState({products,companies,offerings})
+      }
+      
+      render(){
+        const { products, offerings, companies } = this.state;
+        const prodUnder5=products.filter(product=>product.suggestedPrice <5);
+        const prod5AndMore=products.filter(product=>product.suggestedPrice >=5);
+        console.log(prodUnder5)
+     
+        return (
+        <HashRouter>
+            <h1> Acme 5 - Over / Under</h1>
+         
+              <nav>
+                <Link to='/prodUnderFive' className={location.path === '/prodUnderFive' ? 'selected':''}>
+                  Under Five({prodUnder5.length}) 
+                </Link>
+                <Link to='/prodFiveAndOver'> Five and Over({prod5AndMore.length})</Link>
+              </nav>
+
+            <Switch>
+                <Route  path='/prodUnderFive/:id?' render={(props=> <ProductsUnderFive  prodUnder5={prodUnder5} match={props.match} companies={companies} offerings={offerings} />)} />
+                
+                <Route  path='/prodFiveAndOver/:id?' render={(props)=> <ProductsOverFive  prod5AndMore={prod5AndMore} match={props.match} companies={companies} offerings={offerings}/>}/>  
+             
+                
+                <Redirect to='/prodUnderFive/:id?' />
+              }
+                
+                
+            </Switch> 
+        </HashRouter>
+         );
+      }
+    }
+
+    render(<App />, root);
+
+  </script>
+  </body>
+</html>
